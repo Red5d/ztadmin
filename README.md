@@ -6,6 +6,8 @@ scalable, secure P2P virtual network between all your computers no matter where 
 
 This tool manipulates the settings on the [admin panel](https://www.zerotier.com/admin.html) and can be scripted.
 
+I am not associated with ZeroTier Networks, I just think it's awesome.
+
 
 ##Requirements:
 * Python version 2.6+ (not 3.x)
