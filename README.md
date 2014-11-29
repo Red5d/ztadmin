@@ -1,4 +1,4 @@
-ztadmin
+ZTAdmin
 =======
 
 [ZeroTier One](https://www.zerotier.com/) is a Software Defined Networking service that allows for creating a
@@ -13,7 +13,9 @@ This tool manipulates the settings on the [admin panel](https://www.zerotier.com
 * A ZeroTier One account.
 
 Run the script with the "help" option to show the usage information:
+
 Example: `python ztadmin.py help`
+
 If run with no parameters, the script will prompt you to log in, and will then
 display a listing of your networks and their members.
 
