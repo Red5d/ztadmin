@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 
 import sys, requests, json, getpass, pprint, ConfigParser
-
+from os.path import expanduser
+home = expanduser("~")
 # Create session for login.
 s = requests.Session()
 
@@ -12,8 +13,8 @@ ztCreateNetwork_URL = 'https://www.zerotier.com/api/task/createNetwork'
 
 # Check for .ztlogin config file with login info (so user doesn't have to keep typing username/pw for repeated operations)
 config = ConfigParser.ConfigParser()
-c = config.read('.ztlogin')
-
+savecreds = ConfigParser.RawConfigParser()
+c = config.read(home+'/.ztlogin')
 user = ""
 pw = ""
 
@@ -38,6 +39,15 @@ def login():
     
     if l.ok == True:
         print "Login Successful."
+        if len(c) == 0:
+            save = raw_input("Save username/password? (y/n): ")
+            if save == "y" or save == "Y":
+                config.add_section('ZeroTier')
+                config.set('ZeroTier', 'username', user)
+                config.set('ZeroTier', 'password', pw)
+                with open(home+'/.ztlogin', 'wb') as configfile:
+                    config.write(configfile)
+
     else:
         print "Login failed!"
         login()
