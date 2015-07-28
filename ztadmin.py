@@ -72,7 +72,18 @@ def list_networks():
     for network in data.keys():
         print data[network]['desc']+" ("+network+"):"
         for member in data[network]['/member'].keys():
-            print "\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']+"\t"+data[network]['/member'][member]['notes']
+            status = ""
+            if data[network]['/member'][member]['_online'] == 1:
+                status = "Online"
+            else:
+                status = "Offline"
+
+            try:
+                print "\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']+"\t"+data[network]['/member'][member]['notes']
+            except KeyError:
+                # "notes" field is blank
+                print "\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']
+                
         
 # Set/change an attribute on a network member.
 def setMemberData(networkID, memberID, attribute, value):
