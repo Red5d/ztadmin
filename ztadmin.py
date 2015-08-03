@@ -22,6 +22,17 @@ if len(c) != 0:
     user = config.get('ZeroTier', 'username')
     pw = config.get('ZeroTier', 'password')
 
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 # Login to ZeroTier.
 def login():
     global user
@@ -38,7 +49,7 @@ def login():
     l = s.post(ztAuth_URL, data=info)
     
     if l.ok == True:
-        print "Login Successful."
+        print bcolors.OKGREEN+"Login Successful."+bcolors.ENDC
         if len(c) == 0:
             save = raw_input("Save username/password? (y/n): ")
             if save == "y" or save == "Y":
@@ -74,9 +85,9 @@ def list_networks():
         for member in data[network]['/member'].keys():
             status = ""
             if data[network]['/member'][member]['_online'] == 1:
-                status = "Online"
+                status = bcolors.OKGREEN+"Online"+bcolors.ENDC
             else:
-                status = "Offline"
+                status = bcolors.FAIL+"Offline"+bcolors.ENDC
 
             try:
                 print "\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']+"\t"+data[network]['/member'][member]['notes']
