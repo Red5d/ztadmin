@@ -7,7 +7,7 @@ home = expanduser("~")
 s = requests.Session()
 
 # Set ZeroTier API URL variables.
-ztAuth_URL = 'https://www.zerotier.com/api/auth/local'
+ztAuth_URL = 'https://my.zerotier.com/api/_auth/local'
 ztNetworkData_URL = 'https://www.zerotier.com/api/network'
 ztCreateNetwork_URL = 'https://www.zerotier.com/api/task/createNetwork'
 
@@ -42,11 +42,11 @@ def login():
         pw = getpass.getpass()
     
     info = {
-        'username': user,
+        'login': user,
         'password': pw
     }
     
-    l = s.post(ztAuth_URL, data=info)
+    l = s.post(ztAuth_URL, data=info, headers={'Content-Type': 'application/json'}))
     
     if l.ok == True:
         print bcolors.OKGREEN+"Login Successful."+bcolors.ENDC
