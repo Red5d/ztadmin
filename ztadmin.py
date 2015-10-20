@@ -46,7 +46,7 @@ def login():
         'password': pw
     }
     
-    l = s.post(ztAuth_URL, data=info, headers={'Content-Type': 'application/json'}))
+    l = s.post(ztAuth_URL, data=info, headers={'Content-Type': 'application/json'})
     
     if l.ok == True:
         print bcolors.OKGREEN+"Login Successful."+bcolors.ENDC
