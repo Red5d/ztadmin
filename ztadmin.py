@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import sys, requests, json, getpass, pprint, ConfigParser
+import sys, requests, json, getpass, pprint, configparser
 from os.path import expanduser
 home = expanduser("~")
 # Create session for login.
@@ -12,8 +12,8 @@ ztNetworkData_URL = 'https://www.zerotier.com/api/network'
 ztCreateNetwork_URL = 'https://www.zerotier.com/api/task/createNetwork'
 
 # Check for .ztlogin config file with login info (so user doesn't have to keep typing username/pw for repeated operations)
-config = ConfigParser.ConfigParser()
-savecreds = ConfigParser.RawConfigParser()
+config = configparser.ConfigParser()
+savecreds = configparser.RawConfigParser()
 c = config.read(home+'/.ztlogin')
 user = ""
 pw = ""
@@ -38,20 +38,20 @@ def login():
     global user
     global pw
     if user == "":
-        user = raw_input("Username: ")
+        user = input("Username: ")
         pw = getpass.getpass()
     
     info = {
         'login': user,
         'password': pw
     }
-    
-    l = s.post(ztAuth_URL, data=info, headers={'Content-Type': 'application/json'})
-    
+
+    l = s.post(ztAuth_URL, data=json.dumps(info), headers={'Content-Type': 'application/json'})
+
     if l.ok == True:
-        print bcolors.OKGREEN+"Login Successful."+bcolors.ENDC
+        print(bcolors.OKGREEN+"Login Successful."+bcolors.ENDC)
         if len(c) == 0:
-            save = raw_input("Save username/password? (y/n): ")
+            save = input("Save username/password? (y/n): ")
             if save == "y" or save == "Y":
                 config.add_section('ZeroTier')
                 config.set('ZeroTier', 'username', user)
@@ -60,13 +60,17 @@ def login():
                     config.write(configfile)
 
     else:
-        print "Login failed! (%s)" % l.reason
+        print("Login failed! (%s)" % l.reason)
         login()
     
 # Retrieve all network data.
 def getData():
     r = s.get(ztNetworkData_URL)
-    data = json.loads(r.text)
+    try:
+        data = json.loads(r.text)
+    except json.decoder.JSONDecodeError as e:
+        print("[INFO] No data returned (%s)" % e)
+        data = {}
     return data
 
 # Retrieve data for specific network.
@@ -79,9 +83,9 @@ def getNetwork(networkID):
 def list_networks():
     data = getData()
     
-    print "Networks:"
+    print("Networks:")
     for network in data.keys():
-        print data[network]['desc']+" ("+network+"):"
+        print(data[network]['desc']+" ("+network+"):")
         for member in data[network]['/member'].keys():
             status = ""
             if data[network]['/member'][member]['_online'] == 1:
@@ -90,10 +94,10 @@ def list_networks():
                 status = bcolors.FAIL+"Offline"+bcolors.ENDC
 
             try:
-                print "\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']+"\t"+data[network]['/member'][member]['notes']
+                print("\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']+"\t"+data[network]['/member'][member]['notes'])
             except KeyError:
                 # "notes" field is blank
-                print "\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']
+                print("\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments'])
                 
         
 # Set/change an attribute on a network member.
@@ -102,8 +106,8 @@ def setMemberData(networkID, memberID, attribute, value):
     allowedAttributes = ["ipAssignments", "activeBridge", "authorized", "notes"]
     
     if attribute not in allowedAttributes:
-        print "Invalid attribute '"+attribute+"'."
-        print "Allowed attributes: "+str(allowedAttributes)
+        print("Invalid attribute '"+attribute+"'.")
+        print("Allowed attributes: "+str(allowedAttributes))
         s.close()
         sys.exit()
     
@@ -112,9 +116,9 @@ def setMemberData(networkID, memberID, attribute, value):
     r = s.post(ztNetworkData_URL+"/"+networkID+'/member/'+memberID, data=memberData)
     
     if r.ok:
-        print "Set "+str(attribute)+" for "+str(memberID)+" to "+str(value)+"."
+        print("Set "+str(attribute)+" for "+str(memberID)+" to "+str(value)+".")
     else:
-        print "Failed to set "+str(attribute)+" for "+str(memberID)+"."
+        print("Failed to set "+str(attribute)+" for "+str(memberID)+".")
         
 # Create a new network.
 def createNetwork(name):
@@ -124,11 +128,11 @@ def createNetwork(name):
     
     if r.status_code == 409:
         # Network name already exists.
-        print r.text
+        print(r.text)
     elif r.status_code != 200:
-        print "Failed to create network!"
+        print("Failed to create network!")
     else:
-        print "Network '"+name+"' created."
+        print("Network '"+name+"' created.")
 
 # Set/change an attribute on a network.
 def setNetworkData(networkID, attribute, value):
@@ -138,16 +142,16 @@ def setNetworkData(networkID, attribute, value):
     
     # Check if the specified attribute is writable (included in allowedAttributes array).
     if attribute not in allowedAttributes:
-        print "Invalid attribute '"+attribute+"'."
-        print "Allowed attributes: "+str(allowedAttributes)
+        print("Invalid attribute '"+attribute+"'.")
+        print("Allowed attributes: "+str(allowedAttributes))
     else:
         networkData[attribute] = value
         r = s.post(ztNetworkData_URL+"/"+networkID, data=networkData)
         
         if r.ok:
-            print "Set "+str(attribute)+" for "+str(networkID)+" to "+str(value)+"."
+            print("Set "+str(attribute)+" for "+str(networkID)+" to "+str(value)+".")
         else:
-            print "Failed to set "+str(attribute)+" for "+str(networkID)+"."
+            print("Failed to set "+str(attribute)+" for "+str(networkID)+".")
             
 def authorizeAll(networkID):
     # Authorize all computers asking to join a networkID (useful for mass-deployments)
@@ -179,14 +183,14 @@ elif sys.argv[1] == "setmember":
         login()
         setMemberData(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
     else:
-        print "Usage: setmember <networkid> <memberid> <attribute> <value>"
+        print("Usage: setmember <networkid> <memberid> <attribute> <value>")
         
 elif sys.argv[1] == "setnetwork":
     if len(sys.argv) == 5:
         login()
         setNetworkData(sys.argv[2], sys.argv[3], sys.argv[4])
     else:
-        print "Usage: setnetwork <networkid> <attribute> <value>"
+        print("Usage: setnetwork <networkid> <attribute> <value>")
         
 elif sys.argv[1] == "authall":
     if len(sys.argv) == 3:
@@ -198,17 +202,16 @@ elif sys.argv[1] == "networkinfo":
         login()
         networkInfo(sys.argv[2])
     else:
-        print "Usage: networkinfo <networkid>"
+        print("Usage: networkinfo <networkid>")
         
 else:
     # If no valid command options found, print usage."
-    print "Usage: <command> <options>..."
-    print ""
-    print "create\t\t<name>\t\t\t\t\t\tCreate a new network."
-    print "setmember\t<networkid> <memberid> <attribute> <value>\tSet/change an attribute on a network member."
-    print "setnetwork\t<networkid> <attribute> <value>\t\t\tSet/change an attribute on a network."
-    print "authall\t\t<networkid>\t\t\t\t\tAuthorize all computers asking to join a network id."
-    print "networkinfo\t<networkid>\t\t\t\t\tShow info for a specified network."
+    print("Usage: <command> <options>...")
+    print("")
+    print("create\t\t<name>\t\t\t\t\t\tCreate a new network.")
+    print("setmember\t<networkid> <memberid> <attribute> <value>\tSet/change an attribute on a network member.")
+    print("setnetwork\t<networkid> <attribute> <value>\t\t\tSet/change an attribute on a network.")
+    print("authall\t\t<networkid>\t\t\t\t\tAuthorize all computers asking to join a network id.")
+    print("networkinfo\t<networkid>\t\t\t\t\tShow info for a specified network.")
 
 s.close()
-
