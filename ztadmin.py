@@ -60,7 +60,7 @@ def login():
                     config.write(configfile)
 
     else:
-        print "Login failed!"
+        print "Login failed! (%s)" % l.reason
         login()
     
 # Retrieve all network data.
