@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import sys, requests, json, getpass, pprint, configparser
+from ztObjects import *
 from os.path import expanduser
 home = expanduser("~")
 # Create session for login.
@@ -8,7 +9,7 @@ s = requests.Session()
 
 # Set ZeroTier API URL variables.
 ztAuth_URL = 'https://my.zerotier.com/api/_auth/local'
-ztNetworkData_URL = 'https://www.zerotier.com/api/network'
+ztNetworkData_URL = 'https://my.zerotier.com/api/network'
 ztCreateNetwork_URL = 'https://www.zerotier.com/api/task/createNetwork'
 
 # Check for .ztlogin config file with login info (so user doesn't have to keep typing username/pw for repeated operations)
@@ -79,27 +80,41 @@ def getNetwork(networkID):
     network = json.loads(r.text)
     return network
 
+def getMemberList(networkID):
+    return s.get(ztNetworkData_URL+"/"+networkID+"/member/").json()
+    
+def getMemberData(networkID, memberID):
+    return s.get(ztNetworkData_URL+"/"+networkID+"/member/"+memberID).json()
+
 # List network names and members.
 def list_networks():
     data = getData()
+#    pprint.pprint(str(data))
     
     print("Networks:")
-    for network in data.keys():
-        print(data[network]['desc']+" ("+network+"):")
-        for member in data[network]['/member'].keys():
-            status = ""
-            if data[network]['/member'][member]['_online'] == 1:
-                status = bcolors.OKGREEN+"Online"+bcolors.ENDC
-            else:
-                status = bcolors.FAIL+"Offline"+bcolors.ENDC
+    for network in data:
+        print(network['config']['name']+" ("+network['config']['nwid']+"):")
+        for member in getMemberList(network['config']['nwid']):
+            memberdata = getMemberData(network['config']['nwid'], member)
+#            try:
+            print(member+"\t"+memberdata['annot']['description'].ljust(15)+"\t"+memberdata['config']['ipAssignments'][0])
+#            except KeyError:
+#                print(str(memberdata))
+#            status = ""
+#            if data[network]['/member'][member]['_online'] == 1:
+#                status = bcolors.OKGREEN+"Online"+bcolors.ENDC
+#            else:
+#                status = bcolors.FAIL+"Offline"+bcolors.ENDC
 
-            try:
-                print("\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']+"\t"+data[network]['/member'][member]['notes'])
-            except KeyError:
-                # "notes" field is blank
-                print("\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments'])
+#            try:
+#                print("\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments']+"\t"+data[network]['/member'][member]['notes'])
+#            except KeyError:
+#                # "notes" field is blank
+#                print("\t"+status+"\t"+data[network]['/member'][member]['id']+"\t"+data[network]['/member'][member]['ipAssignments'])
                 
-        
+
+
+
 # Set/change an attribute on a network member.
 def setMemberData(networkID, memberID, attribute, value):
     memberData = getData()[networkID]['/member'][memberID]
@@ -162,8 +177,20 @@ def authorizeAll(networkID):
 # Show info for specified network.
 def networkInfo(networkID):
     network = getNetwork(networkID)
-    del network['/member']
-    pprint.pprint(network)
+    print("Name: ".ljust(25)+network['config']['name'])
+    print("ID:   ".ljust(25)+network['id'])
+    print("Allow Passive Bridging: ".ljust(25)+str(network['config']['allowPassiveBridging']))
+    print("Authorized Member Count:".ljust(25)+str(network['config']['authorizedMemberCount']))
+    print("Creation Time: ".ljust(25)+str(network['config']['creationTime']))
+    print("Enable Broadcast: ".ljust(25)+str(network['config']['enableBroadcast']))
+    print("Gateways: ".ljust(25)+str(network['config']['gateways']))
+    print("IP Assignment Pools: ".ljust(25)+str(network['config']['ipAssignmentPools']))
+    print("IP Local Routes: ".ljust(25)+str(network['config']['ipLocalRoutes']))
+    print("Multicast Limit: ".ljust(25)+str(network['config']['multicastLimit']))
+    print("Private: ".ljust(25)+str(network['config']['private']))
+    print("IPv4 Assign Mode: ".ljust(25)+network['config']['v4AssignMode'])
+    print("IPv6 Assign Mode: ".ljust(25)+network['config']['v6AssignMode'])
+    
 
 
 # Begin main program.
