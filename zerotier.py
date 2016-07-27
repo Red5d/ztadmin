@@ -10,7 +10,7 @@ class ZT(object):
         if data == None:
             return requests.get(self.api_base+path, headers={'Authorization': 'Bearer '+self.api_key})
         else:
-            return requests.get(self.api_base+path, headers={'Authorization': 'Bearer '+self.api_key}, data=data)
+            return requests.post(self.api_base+path, headers={'Authorization': 'Bearer '+self.api_key}, data=data)
 
     def status(self):
         return self.request("/status").json()
@@ -44,11 +44,14 @@ class Network(object):
         self.authorizedMemberCount = njson['config']['authorizedMemberCount']
         self.allowPassiveBridging = njson['config']['allowPassiveBridging']
         self.ipAssignmentPools = njson['config']['ipAssignmentPools']
-        self.ipLocalRoutes = njson['config']['ipLocalRoutes']
+        try:
+            self.routes = njson['config']['routes']
+        except KeyError:
+            self.routes = njson['config']['ipLocalRoutes']
+
         self.multicastLimit = njson['config']['multicastLimit']
         self.v4AssignMode = njson['config']['v4AssignMode']
         self.v6AssignMode = njson['config']['v6AssignMode']
-        self.gateways = njson['config']['gateways']
         self.relays = njson['config']['relays']
         self.rules = njson['config']['rules']
         self.clock = datetime.datetime.fromtimestamp(njson['config']['clock'] / float(1000))
@@ -67,17 +70,13 @@ class Network(object):
     
 class Member(object):
     def __init__(self, z, mjson, netActive = []):
-        self.name = mjson['name']
-        self.description = mjson['description']
-        self.activeBridge = mjson['config']['activeBridge']
+        self._json = mjson
+        self._z = z
         self.address = mjson['config']['address']
-        self.authorized = mjson['config']['authorized']
         self.clock = datetime.datetime.fromtimestamp(mjson['config']['clock'] / float(1000))
-        self.ipAssignments = mjson['config']['ipAssignments']
         self.networkId = mjson['networkId']
         self.nodeId = mjson['nodeId']
         self.identity = mjson['config']['identity']
-        self.importance = mjson['importance']
         self.recentLog = mjson['config']['recentLog']
 
         # If a list of active network members has been given, check against that to see if this member is active.
@@ -93,4 +92,56 @@ class Member(object):
             else:
                 self.online = False
 
-        
+    def save(self, z):
+        return z.request("/network/"+self.networkId+"/member/"+self.address, data=self._json)
+
+    @property
+    def name(self):
+        return self._json['name']
+
+    @name.setter
+    def name(self, value):
+        return self._z.request("/network/"+self.networkId+"/member/"+self.address, data={'name': value})
+        #self._json['name'] = value
+
+    @property
+    def description(self):
+        return self_.json['description']
+
+    @description.setter
+    def description(self, value):
+        self._json['description'] = value
+
+    @property
+    def activeBridge(self):
+        return self_.json['config']['activeBridge']
+
+    @activeBridge.setter
+    def activeBridge(self, value):
+        self._json['config']['activeBridge'] = value
+
+    @property
+    def authorized(self):
+        return self._json['config']['authorized']
+
+    @authorized.setter
+    def authorized(self, value):
+        self._json['config']['authorized'] = value
+
+    @property
+    def ipAssignments(self):
+        return self._json['config']['ipAssignments']
+
+    @ipAssignments.setter
+    def ipAssignments(self, value):
+        self._json['config']['ipAssignments'] = value
+
+    @property
+    def importance(self):
+        return self._json['importance']
+
+    @importance.setter
+    def importance(self, value):
+        self._json['importance'] = value
+
+
